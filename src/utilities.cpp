@@ -60,9 +60,9 @@ int loadData(const char* filename, bool ignoreFirstRow) {
 	if (ignoreFirstRow){
 		temp.erase(temp.begin());
 	}
-	for (int i = 0; i < temp.size(); i++){
-		if (!checkCorruptedRow){
-
+	for (unsigned int i = 0; i < temp.size(); i++){
+		if (!checkCorruptedRow(temp[i])){
+			temp.erase(temp.begin() + (i - 1));
 		}
 	}
 
