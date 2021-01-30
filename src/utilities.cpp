@@ -23,6 +23,9 @@ int stringToInt(const char *myString) {
 	return atoi(myString);
 }
 
+// takes in the line from getline
+// returns true if row is not corrupted
+// returns false if row is corrupted
 bool checkCorruptedRow(string line) {
 	vector<string> result;
 	stringstream s_stream(line);
@@ -41,6 +44,8 @@ bool checkCorruptedRow(string line) {
 	return true;
 }
 
+// takes in the line from getline
+// converts the string to ints and loads it into the struct
 process_stats getValuesFromString(string line){
 	vector<int> tempVector;
 
@@ -103,6 +108,8 @@ int loadData(const char* filename, bool ignoreFirstRow) {
 	return SUCCESS;
 }
 
+// booleans to sort the vector by cpu_time, process_number, start_time, and io_time
+// in ascending order (low to high)
 bool ascendingCPU(const process_stats& a, const process_stats b) {
 	return a.cpu_time < b.cpu_time;
 }
