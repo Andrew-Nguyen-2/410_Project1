@@ -16,57 +16,58 @@ using namespace std;
 
 //********************** private to this compilation unit **********************
 
-vector<vector<process_stats>> stats;
+vector<process_stats> stats;
 //if myString does not contain a string rep of number returns o
 //if int not large enough has undefined behaviour, very fragile
 int stringToInt(const char *myString) {
 	return atoi(myString);
 }
 
-bool checkCorruptedRow(string line){
-	int commas = 0;
-	int values = 0;
+bool checkCorruptedRow(string line) {
+	vector<string> result;
+	stringstream s_stream(line);
+	while (s_stream.good()){
+		string substr;
+		getline(s_stream, substr, CHAR_TO_SEARCH_FOR);
+		if (substr != ""){
+			result.push_back(substr);
+		}
+	}
 
-	for (unsigned int i = 0; i < line.length(); i++){
-		if (line[i] == CHAR_TO_SEARCH_FOR){
-			commas++;
-		}
-		if (isdigit(line[i])){
-			values++;
-		}
+	if (result.size() != 4){
+		return false;
 	}
-	if (commas == 3 && values == 4){
-		return true;
-	}
-	return false;
+
+	return true;
 }
 
-vector<process_stats> getValuesFromString(string line){
+process_stats getValuesFromString(string line){
 	vector<int> tempVector;
-	vector<process_stats> out;
 
 	string val;
 	int temp = 0;
 	for (unsigned int i = 0; i < line.length(); i++){
-		if (line[i] != CHAR_TO_SEARCH_FOR) {
-			val += line[i];
-		}
-		else {
+		if (line[i] == CHAR_TO_SEARCH_FOR) {
 			stringstream ss(val);
 			ss >> temp;
 			tempVector.push_back(temp);
 			val = "";
-			temp = 0;
+		}
+		else {
+			val += line[i];
 		}
 	}
+	stringstream ss(val);
+	ss >> temp;
+	tempVector.push_back(temp);
+
 	process_stats myStats = {
 			tempVector[0],
 			tempVector[1],
 			tempVector[2],
 			tempVector[3]
 	};
-	out.push_back(myStats);
-	return out;
+	return myStats;
 }
 
 int loadData(const char* filename, bool ignoreFirstRow) {
@@ -82,38 +83,58 @@ int loadData(const char* filename, bool ignoreFirstRow) {
 	vector<string> temp;
 	while (!myInputfile.eof()){
 		getline(myInputfile, line);
-		temp.push_back(line);
+		if (checkCorruptedRow(line) == true){
+			temp.push_back(line);
+		}
 	}
 	myInputfile.close();
 
-	// remove first row if ignoreFirstRow is true
-	if (ignoreFirstRow){
-		temp.erase(temp.begin());
-	}
-
-	// search and remove corrupted rows
-	// appends clean rows to process_stats vector
+	// checks bool ignoreFirstRow and removes it if is true
 	vector<vector<int>> val;
 	for (unsigned int i = 0; i < temp.size(); i++){
-		if (checkCorruptedRow(temp[i]) == false){
-			temp.erase(temp.begin() + i);
+		if (ignoreFirstRow && temp[i] == temp[0]){
+			temp.erase(temp.begin());
 		}
-		else {
-			stats.push_back(getValuesFromString(temp[i]));
-		}
+	}
+
+	for (unsigned int i = 0; i < temp.size(); i++){
+		stats.push_back(getValuesFromString(temp[i]));
 	}
 	return SUCCESS;
 }
 
+bool ascendingCPU(const process_stats& a, const process_stats b) {
+	return a.cpu_time < b.cpu_time;
+}
+bool ascendingProcess(const process_stats& a, const process_stats b) {
+	return a.process_number < b.process_number;
+}
+bool ascendingStart(const process_stats& a, const process_stats b) {
+	return a.start_time < b.start_time;
+}
+bool ascendingIO(const process_stats& a, const process_stats b) {
+	return a.io_time < b.io_time;
+}
 
 //will sort according to user preference
 void sortData(SORT_ORDER mySortOrder) {
-
+	if (mySortOrder == SORT_ORDER::START_TIME){
+		sort(stats.begin(), stats.end(), ascendingStart);
+	}
+	if (mySortOrder == SORT_ORDER::CPU_TIME){
+		sort(stats.begin(), stats.end(), ascendingCPU);
+	}
+	if (mySortOrder == SORT_ORDER::IO_TIME){
+		sort(stats.begin(), stats.end(), ascendingIO);
+	}
+	if (mySortOrder == SORT_ORDER::PROCESS_NUMBER){
+		sort(stats.begin(), stats.end(), ascendingProcess);
+	}
 }
 
 process_stats getNext() {
 	process_stats myFirst;
-	myFirst = stats[0][0], stats[0][1], stats[0][2], stats[0][3];
+	myFirst = stats[0];
 	stats.erase(stats.begin());
 	return myFirst;
 }
